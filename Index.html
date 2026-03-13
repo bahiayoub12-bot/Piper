@@ -496,17 +496,17 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
+// ── API URL ثابت ──────────────────────────────────────
+const API_URL = 'https://ayb-bh1146-piper-pro.hf.space';
+
 // ── Generate ──────────────────────────────────────────
 async function generate() {
   const text   = document.getElementById('textInput').value.trim();
-  const apiUrl = document.getElementById('apiUrl').value.trim();
   const btn    = document.getElementById('genBtn');
   const btnTxt = document.getElementById('btnText');
 
   if (!text) { showToast('⚠️ من فضلك اكتب نصاً أولاً!'); return; }
-  if (!apiUrl) { showToast('⚠️ أدخل رابط الـ HF Space أولاً!'); return; }
 
-  // Loading state
   btn.disabled = true;
   btn.classList.add('loading');
   btnTxt.textContent = 'جاري التوليد...';
@@ -514,8 +514,7 @@ async function generate() {
   const startTime = Date.now();
 
   try {
-    // استدعاء Gradio API
-    const endpoint = apiUrl.replace(/\/$/, '') + '/api/predict';
+    const endpoint = API_URL + '/api/predict';
     const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -525,25 +524,22 @@ async function generate() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const result = await resp.json();
 
-    // Gradio يعيد مسار الملف أو base64
     let audioSrc = '';
     const data = result.data?.[0];
 
     if (typeof data === 'string' && data.startsWith('data:')) {
       audioSrc = data;
     } else if (data?.url) {
-      audioSrc = apiUrl.replace(/\/$/, '') + data.url;
+      audioSrc = API_URL + data.url;
     } else if (data?.path) {
-      audioSrc = apiUrl.replace(/\/$/, '') + '/file=' + data.path;
+      audioSrc = API_URL + '/file=' + data.path;
     } else {
       throw new Error('صيغة الرد غير متوقعة');
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
-    // تشغيل الصوت
-    const player = document.getElementById('audioPlayer');
-    player.src = audioSrc;
+    const player  = document.getElementById('audioPlayer');
+    player.src    = audioSrc;
     player.play();
 
     document.getElementById('audioSection').classList.add('show');
