@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🔊 Piper TTS — محوّل النص إلى صوت</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4ff;
+  --card:#ffffff;
+  --text:#1a1a2e;
+  --muted:#6b7280;
+  --radius:20px;
+  --shadow:0 8px 32px rgba(0,0,0,0.10);
+  --shadow-hover:0 16px 48px rgba(0,0,0,0.18);
+}
+body{
+  font-family:'Tajawal','Nunito',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Animated background ────────────────────────────── */
+.bg-blobs{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+}
+.blob{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;
+  animation:float 8s ease-in-out infinite;
+}
+.blob-1{width:500px;height:500px;background:#a78bfa;top:-100px;left:-100px;animation-delay:0s;}
+.blob-2{width:400px;height:400px;background:#34d399;top:40%;right:-80px;animation-delay:2s;}
+.blob-3{width:350px;height:350px;background:#f59e0b;bottom:-80px;left:30%;animation-delay:4s;}
+.blob-4{width:300px;height:300px;background:#f472b6;top:20%;left:40%;animation-delay:1s;}
+@keyframes float{
+  0%,100%{transform:translateY(0) scale(1);}
+  50%{transform:translateY(-30px) scale(1.05);}
+}
+
+/* ── Layout ─────────────────────────────────────────── */
+.container{max-width:1000px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+
+/* ── Header ─────────────────────────────────────────── */
+header{
+  text-align:center;
+  padding:60px 20px 40px;
+}
+.logo{
+  font-size:64px;
+  display:inline-block;
+  animation:bounce 2s ease-in-out infinite;
+  filter:drop-shadow(0 4px 16px rgba(167,139,250,0.5));
+}
+@keyframes bounce{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-10px);}
+}
+h1{
+  font-family:'Nunito',sans-serif;
+  font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:900;
+  background:linear-gradient(135deg,#7c3aed,#2563eb,#059669);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin:12px 0 8px;
+  line-height:1.2;
+}
+.subtitle{
+  color:var(--muted);
+  font-size:1.05rem;
+  font-weight:500;
+}
+.pills{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+  margin-top:16px;
+}
+.pill{
+  background:white;
+  border-radius:20px;
+  padding:6px 16px;
+  font-size:0.82rem;
+  font-weight:600;
+  color:#4b5563;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ── API Config Banner ──────────────────────────────── */
+.config-banner{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:2px solid #f59e0b;
+  border-radius:16px;
+  padding:16px 20px;
+  margin-bottom:28px;
+  display:flex;align-items:center;gap:12px;
+  font-size:0.9rem;
+  color:#92400e;
+}
+.config-banner input{
+  flex:1;
+  border:2px solid #f59e0b;
+  border-radius:10px;
+  padding:8px 14px;
+  font-family:'Tajawal',sans-serif;
+  font-size:0.88rem;
+  background:white;
+  color:#1a1a2e;
+  direction:ltr;
+}
+.config-banner input:focus{outline:none;border-color:#d97706;}
+
+/* ── Text Input Section ─────────────────────────────── */
+.input-section{
+  background:white;
+  border-radius:var(--radius);
+  padding:28px;
+  box-shadow:var(--shadow);
+  margin-bottom:32px;
+}
+.input-section label{
+  display:block;
+  font-weight:700;
+  font-size:1rem;
+  margin-bottom:10px;
+  color:var(--text);
+}
+textarea{
+  width:100%;
+  border:2px solid #e5e7eb;
+  border-radius:14px;
+  padding:16px;
+  font-family:'Tajawal','Nunito',sans-serif;
+  font-size:1.05rem;
+  line-height:1.7;
+  resize:vertical;
+  min-height:120px;
+  color:var(--text);
+  transition:border-color 0.2s,box-shadow 0.2s;
+  background:#fafafa;
+}
+textarea:focus{
+  outline:none;
+  border-color:#7c3aed;
+  box-shadow:0 0 0 4px rgba(124,58,237,0.1);
+  background:white;
+}
+.char-count{
+  text-align:left;
+  font-size:0.78rem;
+  color:var(--muted);
+  margin-top:6px;
+}
+
+/* ── Section Title ──────────────────────────────────── */
+.section-title{
+  font-size:1.25rem;
+  font-weight:800;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:8px;
+}
+
+/* ── Voice Cards Grid ───────────────────────────────── */
+.voices-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:16px;
+  margin-bottom:32px;
+}
+.voice-card{
+  background:white;
+  border-radius:var(--radius);
+  padding:20px 16px;
+  text-align:center;
+  cursor:pointer;
+  border:3px solid transparent;
+  box-shadow:var(--shadow);
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative;
+  overflow:hidden;
+}
+.voice-card::before{
+  content:'';
+  position:absolute;inset:0;
+  opacity:0;
+  transition:opacity 0.25s;
+  border-radius:calc(var(--radius) - 3px);
+}
+.voice-card:hover{
+  transform:translateY(-6px) scale(1.03);
+  box-shadow:var(--shadow-hover);
+}
+.voice-card.active{
+  border-color:var(--accent);
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 12px 40px var(--accent-shadow);
+}
+.voice-card.active::before{opacity:1;}
+
+/* Card colors */
+.card-ar{--accent:#7c3aed;--accent-shadow:rgba(124,58,237,0.25);background:linear-gradient(160deg,#faf5ff,#ffffff);}
+.card-ar.active{background:linear-gradient(160deg,#ede9fe,#ffffff);}
+.card-en-us{--accent:#2563eb;--accent-shadow:rgba(37,99,235,0.25);background:linear-gradient(160deg,#eff6ff,#ffffff);}
+.card-en-us.active{background:linear-gradient(160deg,#dbeafe,#ffffff);}
+.card-fr{--accent:#dc2626;--accent-shadow:rgba(220,38,38,0.25);background:linear-gradient(160deg,#fff5f5,#ffffff);}
+.card-fr.active{background:linear-gradient(160deg,#fee2e2,#ffffff);}
+.card-es{--accent:#d97706;--accent-shadow:rgba(217,119,6,0.25);background:linear-gradient(160deg,#fffbeb,#ffffff);}
+.card-es.active{background:linear-gradient(160deg,#fef3c7,#ffffff);}
+.card-de{--accent:#059669;--accent-shadow:rgba(5,150,105,0.25);background:linear-gradient(160deg,#f0fdf4,#ffffff);}
+.card-de.active{background:linear-gradient(160deg,#d1fae5,#ffffff);}
+
+.voice-avatar{
+  width:70px;height:70px;
+  border-radius:50%;
+  margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  position:relative;
+  z-index:1;
+}
+.card-ar .voice-avatar{background:linear-gradient(135deg,#ede9fe,#c4b5fd);}
+.card-en-us .voice-avatar{background:linear-gradient(135deg,#dbeafe,#93c5fd);}
+.card-fr .voice-avatar{background:linear-gradient(135deg,#fee2e2,#fca5a5);}
+.card-es .voice-avatar{background:linear-gradient(135deg,#fef3c7,#fcd34d);}
+.card-de .voice-avatar{background:linear-gradient(135deg,#d1fae5,#6ee7b7);}
+
+.voice-name{
+  font-weight:700;
+  font-size:0.95rem;
+  color:var(--text);
+  margin-bottom:4px;
+  position:relative;z-index:1;
+}
+.voice-lang{
+  font-size:0.78rem;
+  color:var(--muted);
+  position:relative;z-index:1;
+}
+.voice-flag{
+  font-size:1.3rem;
+  margin-bottom:4px;
+  display:block;
+  position:relative;z-index:1;
+}
+.active-check{
+  position:absolute;top:10px;right:10px;
+  width:22px;height:22px;
+  border-radius:50%;
+  background:var(--accent);
+  color:white;
+  font-size:12px;
+  display:none;align-items:center;justify-content:center;
+  font-weight:900;
+}
+.voice-card.active .active-check{display:flex;}
+
+/* ── Generate Button ────────────────────────────────── */
+.gen-wrap{text-align:center;margin-bottom:32px;}
+.gen-btn{
+  background:linear-gradient(135deg,#7c3aed,#2563eb);
+  color:white;
+  border:none;
+  border-radius:50px;
+  padding:18px 56px;
+  font-family:'Tajawal','Nunito',sans-serif;
+  font-size:1.15rem;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 6px 24px rgba(124,58,237,0.4);
+  transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  display:inline-flex;align-items:center;gap:10px;
+}
+.gen-btn:hover{
+  transform:translateY(-3px) scale(1.04);
+  box-shadow:0 12px 36px rgba(124,58,237,0.55);
+}
+.gen-btn:active{transform:scale(0.97);}
+.gen-btn:disabled{
+  background:linear-gradient(135deg,#9ca3af,#6b7280);
+  box-shadow:none;cursor:not-allowed;transform:none;
+}
+.gen-btn .spinner{
+  width:20px;height:20px;
+  border:3px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  display:none;
+}
+.gen-btn.loading .spinner{display:block;}
+.gen-btn.loading .btn-icon{display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── Audio Player ───────────────────────────────────── */
+.audio-section{
+  background:white;
+  border-radius:var(--radius);
+  padding:24px;
+  box-shadow:var(--shadow);
+  margin-bottom:32px;
+  display:none;
+  animation:slideUp 0.4s ease;
+}
+.audio-section.show{display:block;}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.audio-section h3{
+  font-weight:700;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+audio{
+  width:100%;
+  border-radius:12px;
+  accent-color:#7c3aed;
+}
+.audio-meta{
+  margin-top:10px;
+  font-size:0.82rem;
+  color:var(--muted);
+  display:flex;gap:16px;flex-wrap:wrap;
+}
+
+/* ── Error Toast ────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+  background:#dc2626;color:white;
+  padding:14px 24px;border-radius:14px;
+  font-weight:600;font-size:0.9rem;
+  box-shadow:0 8px 24px rgba(220,38,38,0.4);
+  transition:transform 0.3s;z-index:100;
+  max-width:90vw;text-align:center;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── Footer ─────────────────────────────────────────── */
+footer{
+  text-align:center;
+  padding:32px 20px;
+  color:var(--muted);
+  font-size:0.85rem;
+}
+footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
+
+/* ── Responsive ─────────────────────────────────────── */
+@media(max-width:600px){
+  .voices-grid{grid-template-columns:repeat(2,1fr);}
+  h1{font-size:1.8rem;}
+  .gen-btn{padding:16px 36px;font-size:1rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <span class="logo">🔊</span>
+    <h1>محوّل النص إلى صوت</h1>
+    <p class="subtitle">Piper TTS · أصوات طبيعية · متعدد اللغات</p>
+    <div class="pills">
+      <span class="pill">⚡ سريع جداً</span>
+      <span class="pill">🌍 5 لغات</span>
+      <span class="pill">🆓 مجاني</span>
+      <span class="pill">🔒 خاص</span>
+    </div>
+  </header>
+
+  <!-- API URL مخفي -->
+  <input type="hidden" id="apiUrl" value="https://ayb-bh1146-piper-pro.hf.space"/>
+
+  <!-- Text Input -->
+  <div class="input-section">
+    <label for="textInput">✍️ اكتب النص هنا</label>
+    <textarea id="textInput" rows="4"
+      placeholder="اكتب أي نص تريد سماعه... Write any text you want to hear..."></textarea>
+    <div class="char-count"><span id="charCount">0</span> حرف</div>
+  </div>
+
+  <!-- Voice Cards -->
+  <div class="section-title">🎙️ اختر الصوت</div>
+  <div class="voices-grid" id="voicesGrid">
+
+    <div class="voice-card card-ar active" data-voice="ar_kareem" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👨‍💼</div>
+      <span class="voice-flag">🇸🇦</span>
+      <div class="voice-name">كريم</div>
+      <div class="voice-lang">عربي</div>
+    </div>
+
+    <div class="voice-card card-en-us" data-voice="en_us_lessac" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👨‍🦱</div>
+      <span class="voice-flag">🇺🇸</span>
+      <div class="voice-name">Lessac</div>
+      <div class="voice-lang">English US</div>
+    </div>
+
+    <div class="voice-card card-fr" data-voice="fr_siwis" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👩‍🦰</div>
+      <span class="voice-flag">🇫🇷</span>
+      <div class="voice-name">Siwis</div>
+      <div class="voice-lang">Français</div>
+    </div>
+
+    <div class="voice-card card-es" data-voice="es_carlfm" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👨‍🦳</div>
+      <span class="voice-flag">🇪🇸</span>
+      <div class="voice-name">Carlos</div>
+      <div class="voice-lang">Español</div>
+    </div>
+
+    <div class="voice-card card-de" data-voice="de_thorsten" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👨‍💻</div>
+      <span class="voice-flag">🇩🇪</span>
+      <div class="voice-name">Thorsten</div>
+      <div class="voice-lang">Deutsch</div>
+    </div>
+
+  </div>
+
+  <!-- Generate Button -->
+  <div class="gen-wrap">
+    <button class="gen-btn" id="genBtn" onclick="generate()">
+      <span class="btn-icon">🔊</span>
+      <div class="spinner"></div>
+      <span id="btnText">توليد الصوت</span>
+    </button>
+  </div>
+
+  <!-- Audio Output -->
+  <div class="audio-section" id="audioSection">
+    <h3>🎵 الصوت المولَّد</h3>
+    <audio id="audioPlayer" controls></audio>
+    <div class="audio-meta" id="audioMeta"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Footer -->
+<footer>
+  مدعوم بـ <a href="https://github.com/rhasspy/piper" target="_blank">Piper TTS</a> ·
+  الباكند على <a href="https://huggingface.co" target="_blank">Hugging Face</a>
+</footer>
+
+<script>
+// ── State ─────────────────────────────────────────────
+let selectedVoice = 'ar_kareem';
+
+// ── Voice Selection ───────────────────────────────────
+function selectVoice(card) {
+  document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  selectedVoice = card.dataset.voice;
+
+  // نص تلميح حسب اللغة
+  const hints = {
+    'ar_kareem':    'اكتب أي نص عربي هنا...',
+    'en_us_lessac': 'Type any English text here...',
+    'fr_siwis':     'Écrivez votre texte ici...',
+    'es_carlfm':    'Escribe tu texto aquí...',
+    'de_thorsten':  'Schreiben Sie Ihren Text hier...',
+  };
+  document.getElementById('textInput').placeholder = hints[selectedVoice] || '...';
+}
+
+// ── Char Counter ──────────────────────────────────────
+document.getElementById('textInput').addEventListener('input', function() {
+  document.getElementById('charCount').textContent = this.value.length;
+});
+
+// ── Show Toast ────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Generate ──────────────────────────────────────────
+async function generate() {
+  const text   = document.getElementById('textInput').value.trim();
+  const apiUrl = document.getElementById('apiUrl').value.trim();
+  const btn    = document.getElementById('genBtn');
+  const btnTxt = document.getElementById('btnText');
+
+  if (!text) { showToast('⚠️ من فضلك اكتب نصاً أولاً!'); return; }
+  if (!apiUrl) { showToast('⚠️ أدخل رابط الـ HF Space أولاً!'); return; }
+
+  // Loading state
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btnTxt.textContent = 'جاري التوليد...';
+
+  const startTime = Date.now();
+
+  try {
+    // استدعاء Gradio API
+    const endpoint = apiUrl.replace(/\/$/, '') + '/api/predict';
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [text, selectedVoice] }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const result = await resp.json();
+
+    // Gradio يعيد مسار الملف أو base64
+    let audioSrc = '';
+    const data = result.data?.[0];
+
+    if (typeof data === 'string' && data.startsWith('data:')) {
+      audioSrc = data;
+    } else if (data?.url) {
+      audioSrc = apiUrl.replace(/\/$/, '') + data.url;
+    } else if (data?.path) {
+      audioSrc = apiUrl.replace(/\/$/, '') + '/file=' + data.path;
+    } else {
+      throw new Error('صيغة الرد غير متوقعة');
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    // تشغيل الصوت
+    const player = document.getElementById('audioPlayer');
+    player.src = audioSrc;
+    player.play();
+
+    document.getElementById('audioSection').classList.add('show');
+    document.getElementById('audioMeta').innerHTML =
+      `<span>⏱️ وقت التوليد: ${elapsed}s</span>
+       <span>🎙️ الصوت: ${selectedVoice}</span>
+       <span>📝 ${text.length} حرف</span>`;
+
+  } catch (err) {
+    console.error(err);
+    showToast('❌ خطأ: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btnTxt.textContent = 'توليد الصوت';
+  }
+}
+
+// ── Enter key support ─────────────────────────────────
+document.getElementById('textInput').addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') generate();
+});
+</script>
+</body>
+</html>
