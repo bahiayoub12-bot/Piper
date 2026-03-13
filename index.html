@@ -514,19 +514,26 @@ async function generate() {
   const startTime = Date.now();
 
   try {
-    const endpoint = API_URL + '/api/predict';
-    const resp = await fetch(endpoint, {
+    // الخطوة 1: أرسل الطلب واحصل على event_id
+    const resp1 = await fetch(API_URL + '/call/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: [text, selectedVoice] }),
     });
+    if (!resp1.ok) throw new Error(`HTTP ${resp1.status}`);
+    const { event_id } = await resp1.json();
 
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const result = await resp.json();
+    // الخطوة 2: احصل على النتيجة عبر SSE
+    const resp2 = await fetch(API_URL + '/call/predict/' + event_id);
+    if (!resp2.ok) throw new Error(`HTTP ${resp2.status}`);
+    const resultText = await resp2.text();
+
+    // استخرج JSON من SSE
+    const match = resultText.match(/data:\s*(\[.*\])/s);
+    if (!match) throw new Error('لا توجد بيانات في الرد');
+    const data = JSON.parse(match[1])[0];
 
     let audioSrc = '';
-    const data = result.data?.[0];
-
     if (typeof data === 'string' && data.startsWith('data:')) {
       audioSrc = data;
     } else if (data?.url) {
