@@ -497,9 +497,9 @@ function showToast(msg) {
 }
 
 // ── API URL ثابت ──────────────────────────────────────
-const API_URL = 'https://ayb-bh1146-piper-pro.hf.space';
+const API_URL = 'ayb-bh1146/Piper_pro';
 
-// ── Generate ──────────────────────────────────────────
+// ── Generate باستخدام Gradio Client ───────────────────
 async function generate() {
   const text   = document.getElementById('textInput').value.trim();
   const btn    = document.getElementById('genBtn');
@@ -514,34 +514,24 @@ async function generate() {
   const startTime = Date.now();
 
   try {
-    // الخطوة 1: أرسل الطلب واحصل على event_id
-    const resp1 = await fetch(API_URL + '/call/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: [text, selectedVoice] }),
+    const { Client } = await import('https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js');
+    const client = await Client.connect(API_URL);
+    const result = await client.predict('/synthesize', {
+      text: text,
+      voice_id: selectedVoice,
     });
-    if (!resp1.ok) throw new Error(`HTTP ${resp1.status}`);
-    const { event_id } = await resp1.json();
 
-    // الخطوة 2: احصل على النتيجة عبر SSE
-    const resp2 = await fetch(API_URL + '/call/predict/' + event_id);
-    if (!resp2.ok) throw new Error(`HTTP ${resp2.status}`);
-    const resultText = await resp2.text();
-
-    // استخرج JSON من SSE
-    const match = resultText.match(/data:\s*(\[.*\])/s);
-    if (!match) throw new Error('لا توجد بيانات في الرد');
-    const data = JSON.parse(match[1])[0];
-
+    const audioData = result.data[0];
     let audioSrc = '';
-    if (typeof data === 'string' && data.startsWith('data:')) {
-      audioSrc = data;
-    } else if (data?.url) {
-      audioSrc = API_URL + data.url;
-    } else if (data?.path) {
-      audioSrc = API_URL + '/file=' + data.path;
+
+    if (typeof audioData === 'string' && audioData.startsWith('data:')) {
+      audioSrc = audioData;
+    } else if (audioData?.url) {
+      audioSrc = audioData.url;
+    } else if (audioData?.path) {
+      audioSrc = 'https://ayb-bh1146-piper-pro.hf.space/file=' + audioData.path;
     } else {
-      throw new Error('صيغة الرد غير متوقعة');
+      throw new Error('صيغة غير متوقعة');
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
