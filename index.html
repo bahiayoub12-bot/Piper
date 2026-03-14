@@ -346,9 +346,75 @@ footer{
 }
 footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
 
+/* ── Personas ───────────────────────────────────────── */
+.persona-section{
+  background:white;
+  border-radius:var(--radius);
+  padding:24px 28px;
+  box-shadow:var(--shadow);
+  margin-bottom:32px;
+}
+.persona-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:12px;
+  margin-top:4px;
+}
+.persona-card{
+  background:#f8f9ff;
+  border:2.5px solid transparent;
+  border-radius:16px;
+  padding:14px 10px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative;
+}
+.persona-card:hover{
+  transform:translateY(-4px) scale(1.03);
+  box-shadow:0 8px 24px rgba(124,58,237,0.15);
+}
+.persona-card.p-active{
+  border-color:#7c3aed;
+  background:linear-gradient(160deg,#ede9fe,#f5f3ff);
+  box-shadow:0 8px 28px rgba(124,58,237,0.2);
+  transform:translateY(-3px) scale(1.02);
+}
+.persona-emoji{ font-size:2rem; line-height:1; margin-bottom:6px; }
+.persona-name{ font-weight:800; font-size:0.88rem; color:var(--text); margin-bottom:3px; }
+.persona-desc{ font-size:0.62rem; color:var(--muted); line-height:1.4; margin-bottom:6px; }
+.persona-tags{ display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+.ptag{
+  font-size:0.52rem; padding:2px 6px; border-radius:5px; font-weight:700;
+}
+.ptag-spd{ background:#d1fae5; color:#065f46; }
+.ptag-pit{ background:#ede9fe; color:#5b21b6; }
+.ptag-neu{ background:#f3f4f6; color:#6b7280; }
+.p-dot{
+  position:absolute; top:8px; right:8px;
+  width:8px; height:8px; border-radius:50%;
+  background:#7c3aed; display:none;
+  box-shadow:0 0 6px rgba(124,58,237,0.6);
+}
+.persona-card.p-active .p-dot{ display:block; }
+.persona-info-box{
+  margin-top:14px; padding:10px 14px;
+  background:#f5f3ff; border-radius:12px; border:1px solid #ddd6fe;
+  font-size:0.75rem; color:#5b21b6; line-height:1.7; display:none;
+}
+.persona-reset-btn{
+  margin-top:12px;
+  background:none; border:1.5px solid #e5e7eb; border-radius:8px;
+  padding:5px 14px; font-family:'Tajawal',sans-serif; font-size:0.75rem;
+  color:var(--muted); cursor:pointer; transition:all 0.15s;
+  display:block; margin-left:auto; margin-right:auto;
+}
+.persona-reset-btn:hover{ border-color:#dc2626; color:#dc2626; }
+
 /* ── Responsive ─────────────────────────────────────── */
 @media(max-width:600px){
   .voices-grid{grid-template-columns:repeat(2,1fr);}
+  .persona-grid{grid-template-columns:repeat(2,1fr);}
   h1{font-size:1.8rem;}
   .gen-btn{padding:16px 36px;font-size:1rem;}
 }
@@ -435,6 +501,175 @@ footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
 
   </div>
 
+  <!-- Persona Section -->
+  <div class="persona-section">
+    <div class="section-title">🎭 الشخصية الصوتية <span style="font-size:0.75rem;font-weight:500;color:var(--muted);margin-right:8px;">اختياري — تغيير السرعة والنبرة</span></div>
+    <div class="persona-grid" id="personaGrid">
+
+      <!-- بدون شخصية -->
+      <div class="persona-card p-active" data-pid="default" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🎙️</div>
+        <div class="persona-name">بدون شخصية</div>
+        <div class="persona-desc">الصوت الأصلي</div>
+        <div class="persona-tags"><span class="ptag ptag-neu">عادي</span></div>
+      </div>
+
+      <!-- ══ عربي ══ -->
+      <div class="persona-card" data-pid="nasser" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">👴</div>
+        <div class="persona-name">ناصر</div>
+        <div class="persona-desc">رجل ناضج فخم</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.85×</span><span class="ptag ptag-pit">−3</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="khaled" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🧔</div>
+        <div class="persona-name">خالد</div>
+        <div class="persona-desc">شاب واثق حيوي</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.1×</span><span class="ptag ptag-pit">+1</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="yousef" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">👦</div>
+        <div class="persona-name">يوسف</div>
+        <div class="persona-desc">مراهق نشيط</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.3×</span><span class="ptag ptag-pit">+4</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="layla" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">👩</div>
+        <div class="persona-name">ليلى</div>
+        <div class="persona-desc">شابة ودودة</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.05×</span><span class="ptag ptag-pit">+5</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="mariam" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">👵</div>
+        <div class="persona-name">مريم</div>
+        <div class="persona-desc">امرأة حكيمة</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.9×</span><span class="ptag ptag-pit">−2</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="jabir" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">📢</div>
+        <div class="persona-name">جابر</div>
+        <div class="persona-desc">مذيع رسمي</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.92×</span><span class="ptag ptag-pit">−5</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="salma_t" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🎓</div>
+        <div class="persona-name">سلمى</div>
+        <div class="persona-desc">أستاذة تعليمية</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.95×</span><span class="ptag ptag-pit">+2</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="reem" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🌸</div>
+        <div class="persona-name">ريم</div>
+        <div class="persona-desc">فتاة صغيرة</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.2×</span><span class="ptag ptag-pit">+7</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="amjad" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🏛️</div>
+        <div class="persona-name">أمجد</div>
+        <div class="persona-desc">خطيب رسمي</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.8×</span><span class="ptag ptag-pit">−6</span></div>
+      </div>
+
+      <!-- ══ English ══ -->
+      <div class="persona-card" data-pid="alex" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🧑‍💻</div>
+        <div class="persona-name">Alex</div>
+        <div class="persona-desc">Young & energetic</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.15×</span><span class="ptag ptag-pit">+2</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="morgan" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🎙️</div>
+        <div class="persona-name">Morgan</div>
+        <div class="persona-desc">Deep narrator</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.88×</span><span class="ptag ptag-pit">−4</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="emma" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">👩‍🎤</div>
+        <div class="persona-name">Emma</div>
+        <div class="persona-desc">Bright & clear</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.1×</span><span class="ptag ptag-pit">+5</span></div>
+      </div>
+
+      <!-- ══ Français ══ -->
+      <div class="persona-card" data-pid="pierre" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🥖</div>
+        <div class="persona-name">Pierre</div>
+        <div class="persona-desc">Élégant & posé</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.9×</span><span class="ptag ptag-pit">−2</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="claire" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🌷</div>
+        <div class="persona-name">Claire</div>
+        <div class="persona-desc">Douce & joyeuse</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.05×</span><span class="ptag ptag-pit">+4</span></div>
+      </div>
+
+      <!-- ══ Español ══ -->
+      <div class="persona-card" data-pid="miguel" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🎸</div>
+        <div class="persona-name">Miguel</div>
+        <div class="persona-desc">Rápido y vivaz</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.2×</span><span class="ptag ptag-pit">+2</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="isabella" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">💃</div>
+        <div class="persona-name">Isabella</div>
+        <div class="persona-desc">Cálida y clara</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.0×</span><span class="ptag ptag-pit">+5</span></div>
+      </div>
+
+      <!-- ══ Deutsch ══ -->
+      <div class="persona-card" data-pid="hans" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🏔️</div>
+        <div class="persona-name">Hans</div>
+        <div class="persona-desc">Präzise & ernst</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">0.87×</span><span class="ptag ptag-pit">−3</span></div>
+      </div>
+
+      <div class="persona-card" data-pid="lena" onclick="selectPersona(this)">
+        <div class="p-dot"></div>
+        <div class="persona-emoji">🌻</div>
+        <div class="persona-name">Lena</div>
+        <div class="persona-desc">Freundlich & klar</div>
+        <div class="persona-tags"><span class="ptag ptag-spd">1.05×</span><span class="ptag ptag-pit">+4</span></div>
+      </div>
+
+    </div>
+
+    <div id="personaInfoBox" class="persona-info-box"></div>
+    <button class="persona-reset-btn" onclick="resetPersona()">✕ إلغاء الشخصية</button>
+  </div>
+
   <!-- Generate Button -->
   <div class="gen-wrap">
     <button class="gen-btn" id="genBtn" onclick="generate()">
@@ -481,6 +716,34 @@ function selectVoice(card) {
     'de_thorsten':  'Schreiben Sie Ihren Text hier...',
   };
   document.getElementById('textInput').placeholder = hints[selectedVoice] || '...';
+
+  // تصفية الشخصيات حسب اللغة المختارة
+  filterPersonas(selectedVoice);
+}
+
+// خريطة الصوت → رمز اللغة
+const VOICE_LANG_MAP = {
+  'ar_kareem':    'ar',
+  'en_us_lessac': 'en',
+  'fr_siwis':     'fr',
+  'es_carlfm':    'es',
+  'de_thorsten':  'de',
+};
+
+function filterPersonas(voiceId) {
+  const lang = VOICE_LANG_MAP[voiceId] || 'ar';
+  document.querySelectorAll('.persona-card[data-pid]').forEach(card => {
+    const pid = card.dataset.pid;
+    const p = PERSONAS[pid];
+    if (!p) return;
+    const show = p.lang === 'all' || p.lang === lang;
+    card.style.display = show ? '' : 'none';
+  });
+  // إذا كانت الشخصية النشطة لا تنتمي للغة الجديدة → رجوع للافتراضي
+  if (activePersona !== 'default') {
+    const ap = PERSONAS[activePersona];
+    if (ap && ap.lang !== lang) resetPersona();
+  }
 }
 
 // ── Char Counter ──────────────────────────────────────
@@ -507,6 +770,10 @@ async function generate() {
 
   if (!text) { showToast('⚠️ من فضلك اكتب نصاً أولاً!'); return; }
 
+  // تطبيق سرعة الشخصية
+  const persona = PERSONAS[activePersona] || PERSONAS.default;
+  const voiceSpeed = persona.speed;
+
   btn.disabled = true;
   btn.classList.add('loading');
   btnTxt.textContent = 'جاري التوليد...';
@@ -519,30 +786,46 @@ async function generate() {
     const result = await client.predict('/synthesize', {
       text: text,
       voice_id: selectedVoice,
+      speed: voiceSpeed,
     });
 
     const audioData = result.data[0];
     let audioSrc = '';
+    let rawBlob = null;
 
     if (typeof audioData === 'string' && audioData.startsWith('data:')) {
-      audioSrc = audioData;
+      // base64 → blob
+      const [meta, b64] = audioData.split(',');
+      const mime = meta.match(/:(.*?);/)[1];
+      const bytes = atob(b64);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      rawBlob = new Blob([arr], { type: mime });
     } else if (audioData?.url) {
-      audioSrc = audioData.url;
+      const res = await fetch(audioData.url);
+      rawBlob = await res.blob();
     } else if (audioData?.path) {
-      audioSrc = 'https://ayb-bh1146-piper-pro.hf.space/file=' + audioData.path;
+      const res = await fetch('https://ayb-bh1146-piper-pro.hf.space/file=' + audioData.path);
+      rawBlob = await res.blob();
     } else {
       throw new Error('صيغة غير متوقعة');
     }
+
+    // تطبيق تغيير الطبقة الصوتية (Pitch)
+    const finalBlob = await applyPersonaPitch(rawBlob, activePersona);
+    audioSrc = URL.createObjectURL(finalBlob);
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const player  = document.getElementById('audioPlayer');
     player.src    = audioSrc;
     player.play();
 
+    const personaLabel = activePersona !== 'default' ? ` · 🎭 ${persona.name}` : '';
     document.getElementById('audioSection').classList.add('show');
     document.getElementById('audioMeta').innerHTML =
       `<span>⏱️ وقت التوليد: ${elapsed}s</span>
-       <span>🎙️ الصوت: ${selectedVoice}</span>
+       <span>🎙️ الصوت: ${selectedVoice}${personaLabel}</span>
+       <span>⚡ السرعة: ${voiceSpeed}×</span>
        <span>📝 ${text.length} حرف</span>`;
 
   } catch (err) {
@@ -555,10 +838,113 @@ async function generate() {
   }
 }
 
+// ── Personas ──────────────────────────────────────────
+const PERSONAS = {
+  default:   { name:'بدون شخصية',  speed:1.0,  pitchShift:0,  lang:'all', desc:'الصوت الأصلي بدون أي تعديل.' },
+  // عربي
+  nasser:    { name:'ناصر',         speed:0.85, pitchShift:-3, lang:'ar',  desc:'رجل ناضج — صوت فخم هادئ · سرعة 0.85× · طبقة −3' },
+  khaled:    { name:'خالد',         speed:1.1,  pitchShift:1,  lang:'ar',  desc:'شاب واثق — نبرة حيوية · سرعة 1.1× · طبقة +1' },
+  yousef:    { name:'يوسف',         speed:1.3,  pitchShift:4,  lang:'ar',  desc:'مراهق نشيط — سريع ومرح · سرعة 1.3× · طبقة +4' },
+  layla:     { name:'ليلى',         speed:1.05, pitchShift:5,  lang:'ar',  desc:'شابة ودودة — أنثوي خفيف · سرعة 1.05× · طبقة +5' },
+  mariam:    { name:'مريم',         speed:0.9,  pitchShift:-2, lang:'ar',  desc:'امرأة هادئة — رصينة وحكيمة · سرعة 0.9× · طبقة −2' },
+  jabir:     { name:'جابر',         speed:0.92, pitchShift:-5, lang:'ar',  desc:'مذيع رسمي — واضح ومهيب · سرعة 0.92× · طبقة −5' },
+  salma_t:   { name:'سلمى',         speed:0.95, pitchShift:2,  lang:'ar',  desc:'أستاذة تعليمية — واضحة ومرتبة · سرعة 0.95× · طبقة +2' },
+  reem:      { name:'ريم',          speed:1.2,  pitchShift:7,  lang:'ar',  desc:'فتاة صغيرة — طفولية مبهجة · سرعة 1.2× · طبقة +7' },
+  amjad:     { name:'أمجد',         speed:0.8,  pitchShift:-6, lang:'ar',  desc:'خطيب رسمي — جهوري مهيب · سرعة 0.8× · طبقة −6' },
+  // English
+  alex:      { name:'Alex',         speed:1.15, pitchShift:2,  lang:'en',  desc:'Young & energetic · 1.15× · pitch +2' },
+  morgan:    { name:'Morgan',       speed:0.88, pitchShift:-4, lang:'en',  desc:'Deep narrator voice · 0.88× · pitch −4' },
+  emma:      { name:'Emma',         speed:1.1,  pitchShift:5,  lang:'en',  desc:'Bright & clear · 1.1× · pitch +5' },
+  // Français
+  pierre:    { name:'Pierre',       speed:0.9,  pitchShift:-2, lang:'fr',  desc:'Élégant & posé · 0.9× · tonalité −2' },
+  claire:    { name:'Claire',       speed:1.05, pitchShift:4,  lang:'fr',  desc:'Douce & joyeuse · 1.05× · tonalité +4' },
+  // Español
+  miguel:    { name:'Miguel',       speed:1.2,  pitchShift:2,  lang:'es',  desc:'Rápido y vivaz · 1.2× · tono +2' },
+  isabella:  { name:'Isabella',     speed:1.0,  pitchShift:5,  lang:'es',  desc:'Cálida y clara · 1.0× · tono +5' },
+  // Deutsch
+  hans:      { name:'Hans',         speed:0.87, pitchShift:-3, lang:'de',  desc:'Präzise & ernst · 0.87× · Tonlage −3' },
+  lena:      { name:'Lena',         speed:1.05, pitchShift:4,  lang:'de',  desc:'Freundlich & klar · 1.05× · Tonlage +4' },
+};
+
+let activePersona = 'default';
+
+function selectPersona(el) {
+  const pid = el.dataset.pid;
+  activePersona = pid;
+  document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('p-active'));
+  el.classList.add('p-active');
+  const p = PERSONAS[pid];
+  const box = document.getElementById('personaInfoBox');
+  if (pid !== 'default') {
+    box.textContent = '🎭 ' + p.desc;
+    box.style.display = 'block';
+    showToast(`🎭 شخصية "${p.name}" مفعّلة`);
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function resetPersona() {
+  activePersona = 'default';
+  document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('p-active'));
+  const def = document.querySelector('.persona-card[data-pid="default"]');
+  if (def) def.classList.add('p-active');
+  document.getElementById('personaInfoBox').style.display = 'none';
+  showToast('🎙️ تم إلغاء الشخصية');
+}
+
+// تغيير الطبقة الصوتية بعد التوليد (Web Audio API)
+function applyPersonaPitch(blob, personaId) {
+  return new Promise(resolve => {
+    const p = PERSONAS[personaId];
+    if (!p || p.pitchShift === 0) { resolve(blob); return; }
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    blob.arrayBuffer().then(buf => {
+      audioCtx.decodeAudioData(buf, decoded => {
+        const ratio = Math.pow(2, p.pitchShift / 12);
+        const newLen = Math.round(decoded.length / ratio);
+        const offCtx = new OfflineAudioContext(decoded.numberOfChannels, newLen, decoded.sampleRate);
+        const src = offCtx.createBufferSource();
+        src.buffer = decoded;
+        src.playbackRate.value = ratio;
+        src.connect(offCtx.destination);
+        src.start(0);
+        offCtx.startRendering().then(rendered => {
+          audioCtx.close();
+          resolve(audioBufferToWav(rendered));
+        }).catch(() => { audioCtx.close(); resolve(blob); });
+      }, () => { audioCtx.close(); resolve(blob); });
+    });
+  });
+}
+
+function audioBufferToWav(buffer) {
+  const nCh = buffer.numberOfChannels;
+  const len = buffer.length * nCh * 2 + 44;
+  const ab = new ArrayBuffer(len);
+  const v = new DataView(ab);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0,'RIFF'); v.setUint32(4,len-8,true); ws(8,'WAVE'); ws(12,'fmt ');
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,nCh,true);
+  v.setUint32(24,buffer.sampleRate,true); v.setUint32(28,buffer.sampleRate*nCh*2,true);
+  v.setUint16(32,nCh*2,true); v.setUint16(34,16,true); ws(36,'data');
+  v.setUint32(40,buffer.length*nCh*2,true);
+  let off = 44;
+  for (let i = 0; i < buffer.length; i++)
+    for (let c = 0; c < nCh; c++) {
+      const s = Math.max(-1,Math.min(1,buffer.getChannelData(c)[i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2;
+    }
+  return new Blob([ab], { type:'audio/wav' });
+}
+
 // ── Enter key support ─────────────────────────────────
 document.getElementById('textInput').addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.key === 'Enter') generate();
 });
+
+// تهيئة عرض الشخصيات عند التحميل (العربية افتراضياً)
+filterPersonas('ar_kareem');
 </script>
 </body>
 </html>
