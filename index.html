@@ -762,7 +762,31 @@ function showToast(msg) {
 // ── API URL ثابت ──────────────────────────────────────
 const API_URL = 'ayb-bh1146/Piper_pro';
 
-// ── Generate باستخدام Gradio Client ───────────────────
+// ── Helper: promise with timeout ─────────────────────
+function withTimeout(promise, ms, msg) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(msg)), ms))
+  ]);
+}
+
+// ── Helper: REST fallback (no Gradio client) ──────────
+const HF_BASE = 'https://ayb-bh1146-piper-pro.hf.space';
+
+async function callViaRest(text, voiceId) {
+  // محاولة REST مباشر بدون Gradio client
+  const res = await fetch(`${HF_BASE}/run/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: [text, voiceId] }),
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  return json.data?.[0];
+}
+
+// ── Generate ──────────────────────────────────────────
 async function generate() {
   const text   = document.getElementById('textInput').value.trim();
   const btn    = document.getElementById('genBtn');
@@ -770,72 +794,131 @@ async function generate() {
 
   if (!text) { showToast('⚠️ من فضلك اكتب نصاً أولاً!'); return; }
 
-  // تطبيق سرعة الشخصية
   const persona = PERSONAS[activePersona] || PERSONAS.default;
-  const voiceSpeed = persona.speed;
 
   btn.disabled = true;
   btn.classList.add('loading');
-  btnTxt.textContent = 'جاري التوليد...';
-
   const startTime = Date.now();
 
-  try {
-    const { Client } = await import('https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js');
-    const client = await Client.connect(API_URL);
-    const result = await client.predict('/synthesize', {
-      text: text,
-      voice_id: selectedVoice,
-      speed: voiceSpeed,
-    });
+  // مراحل التقدم المرئي
+  const steps = [
+    [0,    '🔗 جاري الاتصال بالخادم...'],
+    [4000, '⚙️ جاري تحليل النص...'],
+    [9000, '🎙️ جاري توليد الصوت...'],
+    [18000,'⏳ الخادم مشغول، يُرجى الانتظار...'],
+  ];
+  const timers = steps.map(([delay, msg]) =>
+    setTimeout(() => { if (btn.disabled) btnTxt.textContent = msg; }, delay)
+  );
+  const clearTimers = () => timers.forEach(clearTimeout);
 
-    const audioData = result.data[0];
-    let audioSrc = '';
+  let audioData = null;
+
+  try {
+    // ── محاولة 1: Gradio Client مع timeout 30 ثانية
+    try {
+      btnTxt.textContent = '🔗 جاري الاتصال...';
+      const { Client } = await withTimeout(
+        import('https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js'),
+        8000, 'timeout_import'
+      );
+      const client = await withTimeout(
+        Client.connect(API_URL),
+        12000, 'timeout_connect'
+      );
+      btnTxt.textContent = '🎙️ جاري التوليد...';
+      const result = await withTimeout(
+        client.predict('/synthesize', { text, voice_id: selectedVoice }),
+        25000, 'timeout_predict'
+      );
+      audioData = result.data?.[0];
+    } catch (e1) {
+      // ── محاولة 2: REST مباشر
+      console.warn('Gradio client failed, trying REST:', e1.message);
+      btnTxt.textContent = '🔄 جاري إعادة المحاولة...';
+      audioData = await withTimeout(
+        callViaRest(text, selectedVoice),
+        25000, 'timeout_rest'
+      );
+    }
+
+    clearTimers();
+    if (!audioData) throw new Error('لم يرجع الخادم أي بيانات');
+
+    // ── استخراج blob من الاستجابة
     let rawBlob = null;
 
     if (typeof audioData === 'string' && audioData.startsWith('data:')) {
-      // base64 → blob
       const [meta, b64] = audioData.split(',');
       const mime = meta.match(/:(.*?);/)[1];
       const bytes = atob(b64);
       const arr = new Uint8Array(bytes.length);
       for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
       rawBlob = new Blob([arr], { type: mime });
+
     } else if (audioData?.url) {
-      const res = await fetch(audioData.url);
-      rawBlob = await res.blob();
+      try {
+        const r = await fetch(audioData.url, { signal: AbortSignal.timeout(10000) });
+        rawBlob = await r.blob();
+      } catch {
+        playDirect(audioData.url, text, persona, startTime); return;
+      }
+
     } else if (audioData?.path) {
-      const res = await fetch('https://ayb-bh1146-piper-pro.hf.space/file=' + audioData.path);
-      rawBlob = await res.blob();
+      const fileUrl = `${HF_BASE}/file=${audioData.path}`;
+      try {
+        const r = await fetch(fileUrl, { signal: AbortSignal.timeout(10000) });
+        rawBlob = await r.blob();
+      } catch {
+        playDirect(fileUrl, text, persona, startTime); return;
+      }
+
     } else {
-      throw new Error('صيغة غير متوقعة');
+      throw new Error('صيغة استجابة غير متوقعة');
     }
 
-    // تطبيق تغيير الطبقة الصوتية (Pitch)
+    // تطبيق السرعة والطبقة محلياً
+    btnTxt.textContent = '✨ جاري المعالجة...';
     const finalBlob = await applyPersonaPitch(rawBlob, activePersona);
-    audioSrc = URL.createObjectURL(finalBlob);
+    const audioSrc = URL.createObjectURL(finalBlob);
 
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    const player  = document.getElementById('audioPlayer');
-    player.src    = audioSrc;
-    player.play();
-
-    const personaLabel = activePersona !== 'default' ? ` · 🎭 ${persona.name}` : '';
-    document.getElementById('audioSection').classList.add('show');
-    document.getElementById('audioMeta').innerHTML =
-      `<span>⏱️ وقت التوليد: ${elapsed}s</span>
-       <span>🎙️ الصوت: ${selectedVoice}${personaLabel}</span>
-       <span>⚡ السرعة: ${voiceSpeed}×</span>
-       <span>📝 ${text.length} حرف</span>`;
+    showResult(audioSrc, text, persona, startTime);
 
   } catch (err) {
+    clearTimers();
     console.error(err);
-    showToast('❌ خطأ: ' + err.message);
+    let msg = '❌ فشل التوليد';
+    if (err.message.includes('timeout')) msg = '⏱️ انتهت مهلة الاتصال — الخادم بطيء، حاول مجدداً';
+    else if (err.message.includes('Failed to fetch')) msg = '🌐 تعذّر الاتصال بالخادم';
+    else msg = '❌ ' + err.message;
+    showToast(msg);
   } finally {
+    clearTimers();
     btn.disabled = false;
     btn.classList.remove('loading');
     btnTxt.textContent = 'توليد الصوت';
   }
+}
+
+function playDirect(url, text, persona, startTime) {
+  showResult(url, text, persona, startTime);
+  document.getElementById('genBtn').disabled = false;
+  document.getElementById('genBtn').classList.remove('loading');
+  document.getElementById('btnText').textContent = 'توليد الصوت';
+}
+
+function showResult(src, text, persona, startTime) {
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const player  = document.getElementById('audioPlayer');
+  player.src    = src;
+  player.play().catch(()=>{});
+  const personaLabel = activePersona !== 'default' ? ` · 🎭 ${persona.name}` : '';
+  document.getElementById('audioSection').classList.add('show');
+  document.getElementById('audioMeta').innerHTML =
+    `<span>⏱️ وقت التوليد: ${elapsed}s</span>
+     <span>🎙️ الصوت: ${selectedVoice}${personaLabel}</span>
+     <span>⚡ السرعة: ${persona.speed}×</span>
+     <span>📝 ${text.length} حرف</span>`;
 }
 
 // ── Personas ──────────────────────────────────────────
@@ -893,20 +976,30 @@ function resetPersona() {
   showToast('🎙️ تم إلغاء الشخصية');
 }
 
-// تغيير الطبقة الصوتية بعد التوليد (Web Audio API)
+// تغيير السرعة والطبقة الصوتية محلياً (Web Audio API)
 function applyPersonaPitch(blob, personaId) {
   return new Promise(resolve => {
     const p = PERSONAS[personaId];
-    if (!p || p.pitchShift === 0) { resolve(blob); return; }
+    // إذا لا يوجد تعديل → أرجع الـ blob كما هو مباشرة
+    if (!p || (p.pitchShift === 0 && p.speed === 1.0)) { resolve(blob); return; }
+
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     blob.arrayBuffer().then(buf => {
       audioCtx.decodeAudioData(buf, decoded => {
-        const ratio = Math.pow(2, p.pitchShift / 12);
-        const newLen = Math.round(decoded.length / ratio);
-        const offCtx = new OfflineAudioContext(decoded.numberOfChannels, newLen, decoded.sampleRate);
+        // السرعة تغيّر طول المخرج، الـ pitch يغيّر التردد
+        // نجمع الاثنين: playbackRate = speed × pitchRatio
+        const pitchRatio  = Math.pow(2, p.pitchShift / 12);
+        const totalRate   = p.speed * pitchRatio;
+        // طول المخرج بعد التعديل
+        const newLen = Math.max(1, Math.round(decoded.length / totalRate));
+        const offCtx = new OfflineAudioContext(
+          decoded.numberOfChannels,
+          newLen,
+          decoded.sampleRate
+        );
         const src = offCtx.createBufferSource();
         src.buffer = decoded;
-        src.playbackRate.value = ratio;
+        src.playbackRate.value = totalRate;
         src.connect(offCtx.destination);
         src.start(0);
         offCtx.startRendering().then(rendered => {
@@ -914,7 +1007,7 @@ function applyPersonaPitch(blob, personaId) {
           resolve(audioBufferToWav(rendered));
         }).catch(() => { audioCtx.close(); resolve(blob); });
       }, () => { audioCtx.close(); resolve(blob); });
-    });
+    }).catch(() => resolve(blob));
   });
 }
 
