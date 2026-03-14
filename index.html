@@ -346,29 +346,6 @@ footer{
 }
 footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
 
-/* ── Persona Dropdown ───────────────────────────────── */
-.persona-row{
-  margin-bottom:24px;
-  display:none;
-  animation:slideUp 0.3s ease;
-}
-.persona-row.show{ display:flex; align-items:center; gap:12px; }
-.persona-row label{ font-weight:700; font-size:0.95rem; white-space:nowrap; }
-.persona-select{
-  flex:1;
-  border:2px solid #e5e7eb;
-  border-radius:12px;
-  padding:10px 14px;
-  font-family:'Tajawal','Nunito',sans-serif;
-  font-size:0.95rem;
-  color:var(--text);
-  background:white;
-  cursor:pointer;
-  outline:none;
-  transition:border-color 0.2s;
-}
-.persona-select:focus{ border-color:#7c3aed; }
-
 /* ── Responsive ─────────────────────────────────────── */
 @media(max-width:600px){
   .voices-grid{grid-template-columns:repeat(2,1fr);}
@@ -424,6 +401,30 @@ footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
       <div class="voice-lang">عربي</div>
     </div>
 
+    <div class="voice-card card-ar" data-voice="ar_kareem" data-pitch="-4" data-speed="0.85" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👴</div>
+      <span class="voice-flag">🇸🇦</span>
+      <div class="voice-name">ناصر</div>
+      <div class="voice-lang">عربي — رجل ناضج</div>
+    </div>
+
+    <div class="voice-card card-ar" data-voice="ar_kareem" data-pitch="5" data-speed="1.1" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👩</div>
+      <span class="voice-flag">🇸🇦</span>
+      <div class="voice-name">ليلى</div>
+      <div class="voice-lang">عربي — شابة</div>
+    </div>
+
+    <div class="voice-card card-ar" data-voice="ar_kareem" data-pitch="3" data-speed="1.25" onclick="selectVoice(this)">
+      <div class="active-check">✓</div>
+      <div class="voice-avatar">👦</div>
+      <span class="voice-flag">🇸🇦</span>
+      <div class="voice-name">يوسف</div>
+      <div class="voice-lang">عربي — شاب</div>
+    </div>
+
     <div class="voice-card card-en-us" data-voice="en_us_lessac" onclick="selectVoice(this)">
       <div class="active-check">✓</div>
       <div class="voice-avatar">👨‍🦱</div>
@@ -458,17 +459,6 @@ footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
 
   </div>
 
-  <!-- Persona (Arabic only) -->
-  <div class="persona-row" id="personaRow">
-    <label>🎭 الشخصية:</label>
-    <select class="persona-select" id="personaSel">
-      <option value="default">بدون شخصية — الصوت الأصلي</option>
-      <option value="nasser">ناصر — رجل ناضج (أبطأ، أعمق)</option>
-      <option value="khaled">خالد — شاب حيوي (أسرع، أخف)</option>
-      <option value="layla">ليلى — شابة (أسرع، أرفع)</option>
-    </select>
-  </div>
-
   <!-- Generate Button -->
   <div class="gen-wrap">
     <button class="gen-btn" id="genBtn" onclick="generate()">
@@ -499,12 +489,16 @@ footer a{color:#7c3aed;text-decoration:none;font-weight:600;}
 <script>
 // ── State ─────────────────────────────────────────────
 let selectedVoice = 'ar_kareem';
+let selectedPitch = 0;
+let selectedSpeed = 1.0;
 
 // ── Voice Selection ───────────────────────────────────
 function selectVoice(card) {
   document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
   card.classList.add('active');
   selectedVoice = card.dataset.voice;
+  selectedPitch = parseFloat(card.dataset.pitch || 0);
+  selectedSpeed = parseFloat(card.dataset.speed || 1.0);
 
   // نص تلميح حسب اللغة
   const hints = {
@@ -515,35 +509,13 @@ function selectVoice(card) {
     'de_thorsten':  'Schreiben Sie Ihren Text hier...',
   };
   document.getElementById('textInput').placeholder = hints[selectedVoice] || '...';
-
-  // إظهار قائمة الشخصيات فقط للعربي
-  const row = document.getElementById('personaRow');
-  if (selectedVoice === 'ar_kareem') {
-    row.classList.add('show');
-  } else {
-    row.classList.remove('show');
-    document.getElementById('personaSel').value = 'default';
-  }
 }
 
-// ── Persona settings ──────────────────────────────────
-const PERSONA_SETTINGS = {
-  default: { speed: 1.0, pitch: 0  },
-  nasser:  { speed: 0.85, pitch: -3 },
-  khaled:  { speed: 1.15, pitch: 2  },
-  layla:   { speed: 1.1,  pitch: 5  },
-};
-
-// تطبيق السرعة والطبقة عبر Web Audio بعد التوليد
-function applyPersonaToPlayer() {
-  const pid = document.getElementById('personaSel').value;
-  const p = PERSONA_SETTINGS[pid];
-  if (!p || (p.speed === 1.0 && p.pitch === 0)) return;
-  const player = document.getElementById('audioPlayer');
-  // السرعة فقط عبر playbackRate (بسيط وموثوق)
-  player.playbackRate = p.speed;
+// ── Apply pitch+speed after audio loads ───────────────
+function applyVoiceEffect(player) {
+  if (selectedPitch === 0 && selectedSpeed === 1.0) return;
+  player.playbackRate = selectedSpeed;
 }
-
 
 // ── Char Counter ──────────────────────────────────────
 document.getElementById('textInput').addEventListener('input', function() {
@@ -600,7 +572,7 @@ async function generate() {
     const player  = document.getElementById('audioPlayer');
     player.src    = audioSrc;
     player.play();
-    applyPersonaToPlayer();
+    applyVoiceEffect(player);
 
     document.getElementById('audioSection').classList.add('show');
     document.getElementById('audioMeta').innerHTML =
